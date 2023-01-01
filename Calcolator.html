@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Calculator JavaScript source code with CSS animation</title>
+    <meta property="og:description" content="Calculator in JavaScript with source code. Creating a 3D effect using CSS animation, transform and perspective." />
+    <meta property="og:image" content="https://fs.cdn-chatium.io/get/image_5cfCfzV9Ik.1116x1116.jpeg"/>
+    <meta name="viewport" content="width=350, initial-scale=1">
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        height: 97vh;
+      }
+      body {
+        height: 97vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      @font-face {
+        /* Dited Font */
+        font-family: Dited;
+        src: url('https://fs.cdn-chatium.io/get/RGRIqttLfS.otf') format('opentype');
+      }
+      @font-face {
+        /* E1234 Font */
+        font-family: E1234;
+        src: url('https://fs.cdn-chatium.io/get/SUYPPXWM5U.ttf') format('truetype');
+      }
+      #screen {
+        margin: 10px 5px 5px;
+        width: 310px;
+        background-color: #3a3a3a;
+        height: 56px;
+        position: relative;
+      }
+      .LED {
+        font-family: 'E1234';
+        font-size: 35px;
+        line-height: 35px;
+        color: #38c261;
+        position: absolute;
+        right: 17px;
+        top: 13px;
+      }
+      .LED-slots {
+        color: #42413b;
+      }
+      .slot {
+        position: absolute;
+        bottom: 0px;
+        width: 320px;
+        height: 10px;
+        background: black;
+        border-radius: 5px;
+      }
+      .slot-shade {
+        position: absolute;
+        bottom: 0px;
+        width: 320px;
+        height: 5px;
+        background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,1));
+        border-bottom-left-radius: 5px;
+        border-bottom-right-radius: 5px;
+      }
+      .container-placement {
+        position: absolute;
+        bottom: 0px;
+        left: 5px;
+      }
+      .container {
+        width: 310px;
+        height: 350px;
+        position: absolute;
+        perspective: 1600px;
+        bottom: 0px;
+      }
+      .containerNext {
+        transform: rotateX(40deg);
+        transform-origin: bottom center;
+        bottom: 27px;
+      }
+      .pushed-container {
+        animation: pushed-container-animation 1s linear;
+        animation-fill-mode: forwards;
+      }
+      .text-block {
+        font-family: 'Dited';
+
+        height:      27px;
+        font-size:   27px;
+        line-height: 27px;
+        background-color: #ddd;
+
+        width: 100%;
+        box-sizing: content-box;
+        margin-left: -1px;
+        border: solid #ddd 1px;
+
+        position: absolute;
+        bottom:   0px;
+
+        overflow: hidden;
+      }
+      .emerging-text-block {
+        animation: emerging-text-block-animation 1s linear;
+        animation-fill-mode: forwards;
+      }
+      button {
+        background: linear-gradient(#c0c0c0, #d0d0d0, #d0d0d0, #dddddd);
+        border-top:  solid #eee 2px;
+        border-left: solid #ccc 2px;
+        border-right: solid #ccc 2px;
+        border-bottom: solid #bbb 6px;
+        border-radius: 8px;
+        width: 70px;
+        height: 60px;
+        margin: 5px;
+        font-size: 20px;
+      }
+      .erase {
+        background: linear-gradient(#c06060, #e07070, #e07070, #ff8080);
+        border-top:  solid #fcc 2px;
+        border-left: solid #d55 2px;
+        border-right: solid #d55 2px;
+        border-bottom: solid #c44 6px;
+      }
+      .operation {
+        background: linear-gradient(#a0a0a0, #b0b0b0, #b0b0b0, #c0c0c0);
+        border-top:  solid #ddd 2px;
+        border-left: solid #bbb 2px;
+        border-right: solid #bbb 2px;
+        border-bottom: solid #999 6px;
+      }
+      .double-w {
+        width: 150px;
+      }
+      .double-h {
+        height: 130px;
+      }
+      .button-pressed:not(.double-h) {
+        animation: button-pressed-animation 200ms linear;
+        animation-fill-mode: forwards;
+      }
+      .button-pressed.double-h {
+        animation: button-double-h-pressed-animation 200ms linear;
+        animation-fill-mode: forwards;
+      }
+      #roll {
+        position: relative;
+        height: 125px;
+      }
+      @keyframes button-pressed-animation {
+        0%   { border-bottom-width: 6px; height: 60px; margin-top: 5px  }
+        20%  { border-bottom-width: 2px; height: 55px; margin-top: 10px }
+        100% { border-bottom-width: 6px; height: 60px; margin-top: 5px  }
+      }
+      @keyframes button-double-h-pressed-animation {
+        0%   { border-bottom-width: 6px; height: 130px; margin-top: 5px  }
+        20%  { border-bottom-width: 2px; height: 125px; margin-top: 10px }
+        100% { border-bottom-width: 6px; height: 130px; margin-top: 5px  }
+      }
+      @keyframes emerging-text-block-animation {
+        0%   { height: 0px  }
+        100% { height: 27px }
+      }
+      @keyframes pushed-container-animation {
+          0% { transform: rotateX(0deg); bottom: 0px }
+          4% { transform: rotateX(5deg); }
+         10% { transform: rotateX(10deg); }
+         25% { transform: rotateX(20deg); }
+        100% { transform: rotateX(40deg); bottom: 27px }
+      }
+    </style>
+    <script>
+      let current   = null;
+      let previous  = null;
+      let operation = null;
+
+      const printStack  = [];
+      let lastPrintAt = new Date('1970-01-01 00:00:00');
+
+      function add(text = null) {
+        const timeSinceLastPrint = new Date().getTime() - lastPrintAt.getTime();
+        if (timeSinceLastPrint < 1000) {
+          printStack.push(text);
+          if (1 === printStack.length) {
+            setTimeout(() => add(), 1000 - timeSinceLastPrint);
+          }
+          return;
+        }
+
+        if (null === text && printStack.length) {
+          text = printStack.shift();
+          if (printStack.length) {
+            setTimeout(() => add(), 1000);
+          }
+        }
+        if (null === text) {
+          return;
+        }
+
+        lastPrintAt = new Date();
+
+        const currentContainer = document.querySelector('.container');
+        const container = currentContainer.parentNode;
+
+        document.querySelector('.pushed-container')?.classList?.remove('pushed-container');
+        document.querySelector('.emerging-text-block')?.classList?.remove('emerging-text-block');
+        currentContainer.classList.add('pushed-container');
+
+        const newContainer = document.createElement('div');
+        newContainer.classList.add('container');
+
+        currentContainer.parentNode.removeChild(currentContainer);
+        newContainer.appendChild(currentContainer);
+        currentContainer.classList.add('containerNext');
+
+        const newLine = document.createElement('div');
+        newLine.classList.add('text-block');
+        newLine.classList.add('emerging-text-block');
+        newLine.appendChild(document.createTextNode(text));
+
+        newContainer.appendChild(newLine);
+
+        container.appendChild(newContainer);
+
+        const allLines = document.querySelectorAll('.container');
+        if (allLines.length > 15) {
+          allLines[15].parentNode.removeChild(allLines[15]);
+        }
+      }
+      function onLoad() {
+      }
+      document.fonts.ready.then(() => {
+        const buttons = document.querySelectorAll('button');
+        for (const b of buttons) {
+          b.addEventListener('mousedown', (event) => { 
+            b.classList.add('button-pressed');
+            setTimeout(()=>b.classList.remove('button-pressed'), 200);
+          });
+        }
+
+        add('PRINTING CALCULATOR');
+        add('DO SOME MATH TO SEE IT');
+        add('PRINT AND THE PAPER ROLL');
+        add('UP USING CSS ANIMATION');
+        add('TRANSFORM AND PERSPECTIVE');
+
+        document.querySelector('#LED-slots').innerHTML = '8888888888';
+        updateLED();
+      })
+      function updateLED() {
+        let value = current || previous || '0';
+        if (value.length > 10) {
+          if (value.includes('.')) {
+            value = parseFloat(value).toPrecision(8)
+          } else {
+            value = parseFloat(value).toPrecision(10)
+          }
+        }
+        document.querySelector('#LED').innerHTML = value.slice(-10);
+      }
+      function numPress(key) {
+        console.log(key.innerHTML);
+        if ("0" === current || null === current) {
+          current = key.innerHTML;
+        } else {
+          current += key.innerHTML;
+        }
+        updateLED();
+      }
+      function pointPress(key) {
+        if (current.includes('.')) {
+          return;
+        }
+        if (null === current) {
+          current = '0';
+        }
+        current += '.';
+        updateLED();
+      }
+      function operationPress(key) {
+        if (null === current && null === previous) {
+          return;
+        }
+
+        if (current && operation) {
+          equalsPress(key);
+        } else if (current) {
+          previous = current;
+          current  = null;
+        }
+
+        operation = key.innerHTML;
+
+        add(previous + operation);
+        updateLED();
+      }
+      function equalsPress(key) {
+        if (null === current || null === previous) {
+          return;
+        }
+        add(current + '=');
+        if ('-' === operation) {
+          previous = parseFloat(previous) - parseFloat(current);
+        } else if ('+' === operation) {
+          previous = parseFloat(previous) + parseFloat(current);
+        } else if ('÷' === operation) {
+          previous = parseFloat(previous) / parseFloat(current);
+        } else if ('×' === operation) {
+          previous = parseFloat(previous) * parseFloat(current);
+        }
+        // Dealing with JS floating point precission inaccuracy
+        previous = previous.toFixed(14);
+        if (previous.includes('.')) {
+          previous = previous.replace(/0+$/, '');
+          previous = previous.replace(/\.$/, '');
+        }
+        add(previous);
+        current   = null;
+        operation = null;
+        updateLED();
+      }
+      function acPress(key) {
+        previous  = null;
+        current   = null;
+        operation = null;
+        add('ALL CLEAR');
+        updateLED();
+      }
+      function cePress(key) {
+        current = '0';
+        updateLED();
+      }
+    </script>
+  </head>
+  <body onload="onLoad()">
+    <div>
+    <div id="roll">
+      <div class="slot"></div>
+      <div class="container-placement">
+        <div class="container"></div>
+      </div>
+      <div class="slot-shade"></div>
+    </div>
+    <div id="screen">
+      <div id="LED-slots" class="LED LED-slots"></div>
+      <div id="LED" class="LED"></div>
+    </div>
+    <div>
+      <div style="display: flex">
+        <button class="erase" onclick="acPress(this)">AC</button>
+        <button class="erase" onclick="cePress(this)">CE</button>
+        <button class="operation" onclick="operationPress(this)">÷</button>
+        <button class="operation" onclick="operationPress(this)">×</button>
+      </div>
+      <div style="display: flex">
+        <button onclick="numPress(this)">7</button>
+        <button onclick="numPress(this)">8</button>
+        <button onclick="numPress(this)">9</button>
+        <button class="operation" onclick="operationPress(this)">-</button>
+      </div>
+      <div style="display: flex">
+        <button onclick="numPress(this)">4</button>
+        <button onclick="numPress(this)">5</button>
+        <button onclick="numPress(this)">6</button>
+        <button class="operation" onclick="operationPress(this)">+</button>
+      </div>
+      <div style="display: flex">
+        <div>
+          <div style="display: flex">
+            <button onclick="numPress(this)">1</button>
+            <button onclick="numPress(this)">2</button>
+            <button onclick="numPress(this)">3</button>
+          </div>
+          <div style="display: flex">
+            <button class="double-w" onclick="numPress(this)">0</button>
+            <button onclick="pointPress(this)">.</button>
+          </div>
+        </div>
+        <button class="double-h operation" onclick="equalsPress(this)">=</button>
+      </div>
+    </div>
+    </div>
+  </body>
+</html>
